@@ -1,4 +1,4 @@
-# ProtocolOne
+# Protocol One
 Repository for the game Protocol One by Nexora Studios. Powered by [Rojo](https://github.com/rojo-rbx/rojo) 7.6.1.
 
 ## Getting Started
@@ -47,3 +47,53 @@ git clone https://github.com/RavenRain44/ProtocolOne.git .
 ```
 
 After this, everything should be set up.
+
+## Usage
+
+Assuming that you followed the setup and had no problems or errors, you should be able to start programming.
+
+### Connect to Roblox
+
+To connect your Rojo with roblox, you must install the Roblox Studio plugin using Visual Studio Code. 
+- Press `ctrl + shift + P` and type "Rojo"
+- Select the `Rojo: Open Menu` option
+- Select the `Install Roblox Studio Plugin`
+- Repeat the first two steps
+- Select the bottom option with the green play button
+
+Next, restart your roblox studio and then open the project (in our case it would be Protocol One)
+
+Then, go to the plugins tab and open the new `Rojo` plugin
+
+Finally, select the `Connect` option and that will connect to your Visual Studio Code
+
+Optionally, you can open a terminal and do the command ```rojo serve``` to start the sync and then connect on Roblox Studio.
+
+### Programming in Visual Studio Code
+
+Anything file you create will be automatically created in Roblox Studio. 
+
+This is NOT vice versa however.
+
+Consequently, all files created in Roblox Studio do NOT go into Visual Studio Code (although there is an option to sync code changes).
+
+#### Creating Files
+
+There are 3 main folders `client`, `server`, and `shared`.
+
+The `client` folder automatically ports to the `StarterPlayer/StarterPlayerScripts/Client` folder.
+- To make a file, it follows the naming scheme of `*.client.lua`. (* is the file name, for example `FoodRarityColors.client.lua`)
+
+The `server` folder automatically ports to the `ServerScriptService/Server` folder.
+- To make a file, it follows the naming scheme of `*.server.lua`. (* is the file name, for example `CookHandler.server.lua`)
+
+The `shared` folder automatically ports to the `ReplicatedStorage/Shared` folder.
+- To make a file, it follows the naming scheme of `*.lua`. (* is the file name, for example `RecipeBook.lua`)
+
+If you know basic Roblox Studio programming, you should know the differences between the three. 
+
+#### Known Problems
+
+If you are having problems, I would recommend looking it up or using ChatGPT. Also see the [rojo documentation](https://rojo.space/docs/v7/) for reference.
+
+- I haven't looked too far into it, but I know doing the `require()` syntax throws an error sometimes.
