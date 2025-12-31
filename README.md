@@ -1,99 +1,127 @@
 # Protocol One
-Repository for the game Protocol One by Nexora Studios. Powered by [Rojo](https://github.com/rojo-rbx/rojo) 7.6.1.
 
-## Getting Started
-This repository is for the roblox game Protocol One. It uses Rojo to communicate between Roblox Studio and Visual Studio Code.
+Repository for the Roblox game **Protocol One** by Nexora Studios.  
+Powered by [Rojo](https://github.com/rojo-rbx/rojo) **v7.6.1**.
 
-## Setup
-If you run into any issues during the installation process, DM RavenRain44 on Discord with the issue.
+---
 
-#### Step 1. Install Visual Studio Code
+## Overview
 
-Click on [this link](https://code.visualstudio.com/Download) to install visual studio code. From the official website.
+This repository contains the source code for *Protocol One* and is designed to be used with **Rojo** to sync files between **Roblox Studio** and **Visual Studio Code**.
 
-#### Step 2. Get Rokit
+---
 
-Go to [this GitHub Repository](https://github.com/rojo-rbx/rokit/releases/latest) and scroll down to get the `rokit-X.X.X-windows-x86_64.zip` (assuming you are on windows)
+## Prerequisites
 
-If you aren't on windows, get the release that matches your computer. For Linux users, good luck. ;)
+Before starting, make sure you have:
+- [Visual Studio Code](https://code.visualstudio.com/)
+- [Git](https://git-scm.com/)
+- Roblox Studio
 
-#### Step 3. Setup Visual Studio Code
+---
 
-Open your Visual Studio Code
+## Setup Guide
 
-In the top left, click `File -> Open Folder`, then create and open the folder to hold the project files.
-I recommend making a "Code" folder in your "Documents" folder and then another folder inside your new "Code" folder labelled "ProtocolOne".
-Once inside the new folder, press the "Open" button.
+If you run into issues during setup, DM **RavenRain44** on Discord with details about the error.
 
-Don't make any files yet.
+### 1. Install Visual Studio Code
 
-Next, click on the extensions tab on the left bar (looks like 4 blocks with 1 rotated)
+Download and install VS Code from the official website:  
+https://code.visualstudio.com/Download
 
-Download the extensions: (* = optional)
-- Luau language Server
-- Rojo - Roblox Studio Sync
-- Selene*
-- SyLua*
+---
 
-#### Step 4. Finally, import the repository.
+### 2. Install Rokit
 
-If you don't already have it, get [git](https://git-scm.com/install/) from the official website and go through the installation process.
-After this, you will most likely need to restart your computer to verify changes.
+1. Go to the latest Rokit release:  
+   https://github.com/rojo-rbx/rokit/releases/latest
+2. Download the archive matching your OS  
+   - Windows: `rokit-X.X.X-windows-x86_64.zip`
+3. Extract and install following the included instructions
 
-Then, go back to Visual Studio Code and open the terminal from the top left by clicking `Terminal -> New Terminal`.
-A terminal should pop up from the bottom. In this terminal, do the following command:
+---
+
+### 3. Configure Visual Studio Code
+
+1. Open **Visual Studio Code**
+2. Click **File → Open Folder**
+3. Create and open a folder for the project  
+   - Example: `Documents/Code/ProtocolOne`
+4. Open the **Extensions** tab and install:
+   - **Luau Language Server**
+   - **Rojo – Roblox Studio Sync**
+   - **Selene** (optional)
+   - **SyLua** (optional)
+
+Do **not** create any files yet.
+
+---
+
+### 4. Clone the Repository
+
+1. Open the VS Code terminal:  
+   **Terminal → New Terminal**
+2. Run the following command:
+
 ```bash
-git clone https://github.com/RavenRain44/ProtocolOne.git . 
+git clone https://github.com/RavenRain44/ProtocolOne.git .
 ```
+Once complete, the project should be fully set up.
 
-After this, everything should be set up.
+---
 
 ## Usage
+### Connecting Rojo to Roblox Studio
+1. Press `Ctrl + Shift + P` in VS Code
+2. Type **Rojo**
+3. Select **Rojo: Open Menu**
+4. Choose **Install Roblox Studio Plugin**
+5. Open the menu again and select the option with the green ▶ button
+Then:
+1. Restart **Roblox Studio**
+2. Open the _Protocol One_ place
+3. Go to the **Plugins** tab
+4. Open the **Rojo** plugin
+5. Click **Connect**
 
-Assuming that you followed the setup and had no problems or errors, you should be able to start programming.
+Alternatively, you can start Rojo manually:
 
-### Connect to Roblox
+```bash
+rojo serve
+```
+Then connect from the Roblox Studio plugin.
 
-To connect your Rojo with roblox, you must install the Roblox Studio plugin using Visual Studio Code. 
-- Press `ctrl + shift + P` and type "Rojo"
-- Select the `Rojo: Open Menu` option
-- Select the `Install Roblox Studio Plugin`
-- Repeat the first two steps
-- Select the bottom option with the green play button
+### Development Workflow
+- Files created in VS Code sync to Roblox Studio.
+- Files created in Roblox Studio do not sync back by default.
 
-Next, restart your roblox studio and then open the project (in our case it would be Protocol One)
+---
 
-Then, go to the plugins tab and open the new `Rojo` plugin
+### Project Structure
+The repository is organized into three main folders:
 
-Finally, select the `Connect` option and that will connect to your Visual Studio Code
+#### `client`
+- Syncs to: `St#rterPlayer/StarterPlayerScripts/Client`
+- File naming: `*.client.lua`
+	- Example: `FoodRarityColors.client.lua`
 
-Optionally, you can open a terminal and do the command ```rojo serve``` to start the sync and then connect on Roblox Studio.
+#### `server`
+- Syncs to: `ServerScriptService/Server`
+- File naming: `*.server.lua`
+	- Example: `CookHandler.server.lua`
 
-### Programming in Visual Studio Code
+#### `shared`
+- Syncs to: `ReplicatedStorage/Shared`
+- File naming: `*.lua`
+	- Example: `RecipeBook.lua`
 
-Anything file you create will be automatically created in Roblox Studio. 
+If you are familiar with Roblox development, the separation should be self-explanatory.
 
-This is NOT vice versa however.
+---
 
-Consequently, all files created in Roblox Studio do NOT go into Visual Studio Code (although there is an option to sync code changes).
-
-#### Creating Files
-
-There are 3 main folders `client`, `server`, and `shared`.
-
-The `client` folder automatically ports to the `StarterPlayer/StarterPlayerScripts/Client` folder.
-- To make a file, it follows the naming scheme of `*.client.lua`. (* is the file name, for example `FoodRarityColors.client.lua`)
-
-The `server` folder automatically ports to the `ServerScriptService/Server` folder.
-- To make a file, it follows the naming scheme of `*.server.lua`. (* is the file name, for example `CookHandler.server.lua`)
-
-The `shared` folder automatically ports to the `ReplicatedStorage/Shared` folder.
-- To make a file, it follows the naming scheme of `*.lua`. (* is the file name, for example `RecipeBook.lua`)
-
-If you know basic Roblox Studio programming, you should know the differences between the three. 
-
-#### Known Problems
-
-If you are having problems, I would recommend looking it up or using ChatGPT. Also see the [rojo documentation](https://rojo.space/docs/v7/) for reference.
-
-- I haven't looked too far into it, but I know doing the `require()` syntax throws an error sometimes.
+### Known Issues & Help
+- Some `require()` patterns may occasionally cause errors
+- If you encounter issues:
+	- Search the error message
+	- Use ChatGPT
+	- Refer to the official Rojo documentation: [https://rojo.space/docs/v7/](https://rojo.space/docs/v7/)
