@@ -1,12 +1,14 @@
 -- Most likely needs to be rewritten
 
-local gui = script.Parent
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local gui = player.PlayerGui:WaitForChild("CookingMinigameUI")
 local frame = gui.BarFrame
 local cursor = frame.Cursor
 local stopButton = gui.StopButton
-
-local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local StartCookingEvent = ReplicatedStorage.Remotes:WaitForChild("StartCookingEvent")
 local CookingResultEvent = ReplicatedStorage.Remotes:WaitForChild("CookingResultEvent")
