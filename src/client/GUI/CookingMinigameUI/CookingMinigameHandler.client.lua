@@ -24,12 +24,12 @@ local function startMinigame()
 	gui.Enabled = true
 	playing = true
 
-	cursor.Position = UDim2.new(0, 0, cursor.Position.Y.Scale, 0)
+	cursor.Position = UDim2.fromScale(0, cursor.Position.Y.Scale)
 
 	tween = TweenService:Create(
 		cursor,
 		TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out, -1, true),
-		{ Position = UDim2.new(1, 0, cursor.Position.Y.Scale, 0) }
+		{ Position = UDim2.fromScale(1, cursor.Position.Y.Scale) }
 	)
 	tween:Play()
 end
@@ -48,7 +48,7 @@ local function stopMinigame()
 	local x = cursor.AbsolutePosition.X
 	local green = frame.GreenZone.AbsolutePosition
 	local yellow = frame.YellowZone.AbsolutePosition
-	local red = frame.RedZone.AbsolutePosition
+	-- local red = frame.RedZone.AbsolutePosition
 
 	local result = "Red"
 
