@@ -54,14 +54,14 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 ToggleIngredient.OnServerEvent:Connect(function(player, toolName, side)
-	if not toolName or type(toolName) ~= "string" then 
-		return 
+	if not toolName or type(toolName) ~= "string" then
+		return
 	end
 	local backpack = player:FindFirstChild("Backpack")
 	local hold = player:FindFirstChild("RecipeHold")
 
-	if not backpack or not hold then 
-		return 
+	if not backpack or not hold then
+		return
 	end
 
 	-- if tool is in the left side (backpack), move to hold
@@ -76,7 +76,7 @@ ToggleIngredient.OnServerEvent:Connect(function(player, toolName, side)
 		if count == 6 then
 			return
 		end
-		
+
 		local tool = backpack:FindFirstChild(toolName)
 		if tool and tool:IsA("Tool") then
 			tool.Parent = hold
@@ -84,7 +84,9 @@ ToggleIngredient.OnServerEvent:Connect(function(player, toolName, side)
 			local handle = tool:FindFirstChild("Handle")
 			if handle then
 				local prox = handle:FindFirstChildWhichIsA("ProximityPrompt", true)
-				if prox then prox.Enabled = false end
+				if prox then
+					prox.Enabled = false
+				end
 			end
 			sendInventoryState(player)
 			return
@@ -99,7 +101,9 @@ ToggleIngredient.OnServerEvent:Connect(function(player, toolName, side)
 			local handle = tool2:FindFirstChild("Handle")
 			if handle then
 				local prox = handle:FindFirstChildWhichIsA("ProximityPrompt", true)
-				if prox then prox.Enabled = true end
+				if prox then
+					prox.Enabled = true
+				end
 			end
 			sendInventoryState(player)
 			return

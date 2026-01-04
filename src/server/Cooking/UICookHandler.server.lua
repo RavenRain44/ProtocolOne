@@ -17,14 +17,14 @@ local categoryBase = {
 	Uncommon = 1,
 	Rare = 1,
 	Epic = 1,
-	Legendary = 1
+	Legendary = 1,
 }
 
 -- Cooking quality modifiers per rarity category
 local cookModifiers = {
 	Green = { Common = 0.7, Uncommon = 1.0, Rare = 1.2, Epic = 1.3, Legendary = 1.5 },
 	Yellow = { Common = 1.0, Uncommon = 1.0, Rare = 1.0, Epic = 1.0, Legendary = 1.0 },
-	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 }
+	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 },
 }
 
 -- Helper: check player has required ingredients given a list (needs multiplicity)
@@ -76,7 +76,9 @@ local function consumeIngredientsServer(player, required)
 		for name, count in pairs(neededCounts) do
 			while count > 0 do
 				local tool = backpack:FindFirstChild(name)
-				if not tool then break end
+				if not tool then
+					break
+				end
 				tool:Destroy()
 				count = count - 1
 				neededCounts[name] = count
@@ -90,7 +92,9 @@ local function consumeIngredientsServer(player, required)
 		for name, count in pairs(neededCounts) do
 			while count > 0 do
 				local tool = char:FindFirstChild(name)
-				if not tool then break end
+				if not tool then
+					break
+				end
 				tool:Destroy()
 				count = count - 1
 				neededCounts[name] = count
@@ -109,13 +113,15 @@ local function chooseFoodFromGroup(groupFolder, rarityAdjustments)
 			local r = food:FindFirstChild("Rarity")
 			if r and type(r.Value) == "number" then
 				local finalWeight = math.max(1, math.floor(r.Value * categoryMult))
-				for i = 1, finalWeight do
+				for _ = 1, finalWeight do
 					table.insert(weighted, food)
 				end
 			end
 		end
 	end
-	if #weighted == 0 then return nil end
+	if #weighted == 0 then
+		return nil
+	end
 	return weighted[math.random(#weighted)]
 end
 
@@ -139,12 +145,18 @@ UICookRequest.OnServerEvent:Connect(function(player, stationName, selectedItems)
 	-- (Allow duplicates; we require exact multiset == recipe.Ingredients multiset)
 	local function itemsMatchRecipe(itemsList, recipeIngredients)
 		local need = {}
-		for _, nm in ipairs(recipeIngredients) do need[nm] = (need[nm] or 0) + 1 end
+		for _, nm in ipairs(recipeIngredients) do
+			need[nm] = (need[nm] or 0) + 1
+		end
 		local have = {}
-		for _, nm in ipairs(itemsList) do have[nm] = (have[nm] or 0) + 1 end
+		for _, nm in ipairs(itemsList) do
+			have[nm] = (have[nm] or 0) + 1
+		end
 		-- Every required must be present at least as many
 		for reqName, reqCount in pairs(need) do
-			if (have[reqName] or 0) < reqCount then return false end
+			if (have[reqName] or 0) < reqCount then
+				return false
+			end
 		end
 		-- It's OK if have has extra items (user may have extra); we only require recipe satisfied
 		return true
@@ -184,7 +196,9 @@ UICookRequest.OnServerEvent:Connect(function(player, stationName, selectedItems)
 		end
 	end)
 
-	repeat task.wait() until cookResult ~= nil
+	repeat
+		task.wait()
+	until cookResult ~= nil
 
 	-- cookResult is expected to be "Green"/"Yellow"/"Red"
 	local modifiers = cookModifiers[cookResult] or cookModifiers.Yellow
@@ -215,5 +229,4 @@ UICookRequest.OnServerEvent:Connect(function(player, stationName, selectedItems)
 	if prox then
 		prox.Enabled = true
 	end
-
 end)

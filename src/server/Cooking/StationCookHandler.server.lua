@@ -20,22 +20,22 @@ local CookModifiers = {
 		Uncommon = 1.0,
 		Rare = 1.2,
 		Epic = 1.3,
-		Legendary = 1.5
+		Legendary = 1.5,
 	},
 	Yellow = {
 		Common = 1,
 		Uncommon = 1,
 		Rare = 1,
 		Epic = 1,
-		Legendary = 1
+		Legendary = 1,
 	},
 	Red = {
 		Common = 1.5,
 		Uncommon = 1.2,
 		Rare = 0.6,
 		Epic = 0.3,
-		Legendary = 0.1
-	}
+		Legendary = 0.1,
+	},
 }
 
 ---------------------------------------------------------------------
@@ -46,7 +46,7 @@ local function chooseModifiedFood(groupFolder, cookResult)
 	local mod = CookModifiers[cookResult]
 
 	for _, rarityFolder in ipairs(groupFolder:GetChildren()) do
-		local rarityName = rarityFolder.Name  
+		local rarityName = rarityFolder.Name
 		local rarityBoost = mod[rarityName] or 1
 
 		for _, food in ipairs(rarityFolder:GetChildren()) do
@@ -56,19 +56,21 @@ local function chooseModifiedFood(groupFolder, cookResult)
 				local finalWeight = math.max(1, math.floor(rarityValue.Value * rarityBoost))
 
 				-- DEBUG PRINT
-				--print(food.Name, 
-					--"Base:", rarityValue.Value, 
-					--"x Modifier:", rarityBoost, 
-					--"=", finalWeight)
+				--print(food.Name,
+				--"Base:", rarityValue.Value,
+				--"x Modifier:", rarityBoost,
+				--"=", finalWeight)
 
-				for i = 1, finalWeight do
+				for _ = 1, finalWeight do
 					table.insert(weightedList, food)
 				end
 			end
 		end
 	end
 
-	if #weightedList == 0 then return nil end
+	if #weightedList == 0 then
+		return nil
+	end
 	return weightedList[math.random(#weightedList)]
 end
 
@@ -80,15 +82,21 @@ local function playerHasIngredients(player, required)
 	local character = player.Character
 	local names = {}
 
-	for _, tool in ipairs(backpack:GetChildren()) do names[tool.Name] = true end
+	for _, tool in ipairs(backpack:GetChildren()) do
+		names[tool.Name] = true
+	end
 	if character then
 		for _, tool in ipairs(character:GetChildren()) do
-			if tool:IsA("Tool") then names[tool.Name] = true end
+			if tool:IsA("Tool") then
+				names[tool.Name] = true
+			end
 		end
 	end
 
 	for _, r in ipairs(required) do
-		if not names[r] then return false end
+		if not names[r] then
+			return false
+		end
 	end
 
 	return true
@@ -103,10 +111,15 @@ local function consumeIngredients(player, requiredIngredients)
 
 	for _, name in ipairs(requiredIngredients) do
 		local tool = backpack:FindFirstChild(name)
-		if tool then tool:Destroy() continue end
+		if tool then
+			tool:Destroy()
+			continue
+		end
 		if character then
 			local tool2 = character:FindFirstChild(name)
-			if tool2 then tool2:Destroy() end
+			if tool2 then
+				tool2:Destroy()
+			end
 		end
 	end
 end
@@ -126,7 +139,9 @@ for _, station in ipairs(stationsFolder:GetChildren()) do
 	local machineRecipes = RecipeBook[station.Name]
 
 	prompt.Triggered:Connect(function(player)
-		if not machineRecipes then return end
+		if not machineRecipes then
+			return
+		end
 
 		-- Find first recipe player can make
 		local recipe = nil
@@ -154,7 +169,9 @@ for _, station in ipairs(stationsFolder:GetChildren()) do
 				cookResult = result
 			end
 		end)
-		repeat task.wait() until cookResult
+		repeat
+			task.wait()
+		until cookResult
 		conn:Disconnect()
 
 		--print("Cook Result:", cookResult)
@@ -168,10 +185,14 @@ for _, station in ipairs(stationsFolder:GetChildren()) do
 		-- Pick food using rarity * cook modifier
 		-----------------------------------------------------------------
 		local groupFolder = FoodGroupsFolder:FindFirstChild(recipe.OutputGroup)
-		if not groupFolder then return end
+		if not groupFolder then
+			return
+		end
 
 		local chosenFood = chooseModifiedFood(groupFolder, cookResult)
-		if not chosenFood then return end
+		if not chosenFood then
+			return
+		end
 
 		--print("FINAL PICKED FOOD:", chosenFood.Name)
 
