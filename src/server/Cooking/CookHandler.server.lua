@@ -30,13 +30,15 @@ local function chooseFoodFromGroup(groupFolder, rarityMultiplierPerGroup)
 			local rv = food:FindFirstChild("Rarity")
 			if rv and type(rv.Value) == "number" then
 				local finalWeight = math.max(1, math.floor(rv.Value * mult))
-				for i = 1, finalWeight do
+				for _ = 1, finalWeight do
 					table.insert(weighted, food)
 				end
 			end
 		end
 	end
-	if #weighted == 0 then return nil end
+	if #weighted == 0 then
+		return nil
+	end
 	return weighted[math.random(#weighted)]
 end
 
@@ -44,12 +46,14 @@ end
 local cookModifiers = {
 	Green = { Common = 0.7, Uncommon = 1.0, Rare = 1.2, Epic = 1.3, Legendary = 1.5 },
 	Yellow = { Common = 1.0, Uncommon = 1.0, Rare = 1.0, Epic = 1.0, Legendary = 1.0 },
-	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 }
+	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 },
 }
 
 -- RequestCook: args: stationName (string)
 RequestCook.OnServerEvent:Connect(function(player, stationName)
-	if type(stationName) ~= "string" then return end
+	if type(stationName) ~= "string" then
+		return
+	end
 	local machineRecipes = RecipeBook[stationName]
 	if not machineRecipes then
 		Remotes.InventoryUpdated:FireClient(player, {}, {}) -- keep client sync
@@ -57,12 +61,16 @@ RequestCook.OnServerEvent:Connect(function(player, stationName)
 	end
 
 	local hold = player:FindFirstChild("RecipeHold")
-	if not hold then return end
+	if not hold then
+		return
+	end
 
 	-- Build list of names in hold
 	local inHold = {}
 	for _, tool in ipairs(hold:GetChildren()) do
-		if tool:IsA("Tool") then table.insert(inHold, tool.Name) end
+		if tool:IsA("Tool") then
+			table.insert(inHold, tool.Name)
+		end
 	end
 
 	-- find a recipe that matches exactly (all ingredients present)
@@ -71,12 +79,20 @@ RequestCook.OnServerEvent:Connect(function(player, stationName)
 		local ok = true
 		-- duplicates allowed (player wanted duplicates ok)
 		local counts = {}
-		for _, name in ipairs(inHold) do counts[name] = (counts[name] or 0) + 1 end
+		for _, name in ipairs(inHold) do
+			counts[name] = (counts[name] or 0) + 1
+		end
 		for _, need in ipairs(recipe.Ingredients) do
-			if not counts[need] or counts[need] <= 0 then ok = false; break end
+			if not counts[need] or counts[need] <= 0 then
+				ok = false
+				break
+			end
 			counts[need] = counts[need] - 1
 		end
-		if ok then chosenRecipe = recipe; break end
+		if ok then
+			chosenRecipe = recipe
+			break
+		end
 	end
 
 	if not chosenRecipe then
@@ -87,9 +103,11 @@ RequestCook.OnServerEvent:Connect(function(player, stationName)
 
 	-- consume the tools in hold (destroy them)
 	local needed = {}
-	for _, v in ipairs(chosenRecipe.Ingredients) do needed[v] = (needed[v] or 0) + 1 end
+	for _, v in ipairs(chosenRecipe.Ingredients) do
+		needed[v] = (needed[v] or 0) + 1
+	end
 	for name, count in pairs(needed) do
-		for i = 1, count do
+		for _ = 1, count do
 			local tool = hold:FindFirstChild(name)
 			if tool and tool:IsA("Tool") then
 				tool:Destroy()
@@ -151,7 +169,9 @@ RequestCook.OnServerEvent:Connect(function(player, stationName)
 	local handle = clone:FindFirstChild("Handle")
 	if handle then
 		local prox = handle:FindFirstChildWhichIsA("ProximityPrompt", true)
-		if prox then prox.Enabled = true end
+		if prox then
+			prox.Enabled = true
+		end
 	end
 
 	-- notify client to refresh inventory state (backpack changed)
