@@ -11,16 +11,17 @@ local ToggleIngredient = Remotes:WaitForChild("ToggleIngredient")
 local RequestCook = Remotes:WaitForChild("RequestCook")
 
 -- UI REFERENCES
-local screen = player.PlayerGui:WaitForChild("StationGUI")
+local screen = player.PlayerGui:WaitForChild("UltimateStationUI")
 local background = screen:WaitForChild("Background")
 
 local invFrame = background:WaitForChild("Inventory")
 local invTemplate = invFrame:WaitForChild("TemplateLeft")
 
-local recipeFrame = background:WaitForChild("Recipes")
-local recipeTemplate = recipeFrame:WaitForChild("TemplateRight")
+local ingredientsFrame = background:WaitForChild("Ingredients")
+local ingredientsTemplate = ingredientsFrame:WaitForChild("TemplateRight")
 
-local cookBtn = background.Frame:WaitForChild("Cook")
+local cookButtonFrame = background:WaitForChild("CookButtonFrame")
+local cookBtn = cookButtonFrame:WaitForChild("CookButton")
 local exitBtn = background:WaitForChild("ExitButton")
 
 local hotbar = player.PlayerGui:WaitForChild("Custom Inventory")
@@ -73,7 +74,6 @@ local function createSlot(parent, template, itemName, itemNumber)
 	end
 
 	foodNameLabel.MouseButton1Click:Connect(function()
-		print("[StationsLocal] Clicked on:", itemName, "on side", side)
 		ToggleIngredient:FireServer(itemName, side)
 
 		-- Part instantiation
@@ -96,7 +96,7 @@ end
 ----------------------------------------------------------------
 InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 	clearSlots(invFrame, invTemplate)
-	clearSlots(recipeFrame, recipeTemplate)
+	clearSlots(ingredientsFrame, ingredientsTemplate)
 
 	-- LEFT (inventory)
 	local inventoryMap = {}
@@ -113,7 +113,7 @@ InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 		recipeMap[itemName] = (recipeMap[itemName] or 0) + 1
 	end
 	for item, number in recipeMap do
-		createSlot(recipeFrame, recipeTemplate, item, number)
+		createSlot(ingredientsFrame, ingredientsTemplate, item, number)
 	end
 end)
 
@@ -135,6 +135,7 @@ end)
 -- CLOSE UI
 ----------------------------------------------------------------
 function close()
+	-- Disable the UI
 	screen.Enabled = false
 	hotbarFrame.Visible = true
 end
@@ -151,5 +152,24 @@ end)
 -- EXIT
 ----------------------------------------------------------------
 exitBtn.MouseButton1Click:Connect(function()
+	-- Send all items back to the inventory
+	local recipeHold = player:WaitForChild("RecipeHold")
+
+	-- Sanity check
+	if not recipeHold then
+		close()
+		return
+	end
+
+	-- Iterate through held items and move them back
+	for _, child in ipairs(recipeHold:GetChildren()) do
+		if child:IsA("Tool") then
+			print(child.Name)
+
+			-- Strip "_slot" to get the real item name
+			local itemName = child.Name:gsub("_slot$", "")
+			ToggleIngredient:FireServer(itemName, "TemplateRight")
+		end
+	end
 	close()
 end)

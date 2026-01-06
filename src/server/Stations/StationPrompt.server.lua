@@ -9,7 +9,7 @@ local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
 local stationsFolder = workspace:WaitForChild("ProductionStations")
 
 for _, station in ipairs(stationsFolder:GetChildren()) do
-	local prompt = station:FindFirstChild("Prompt")
+	local prompt = station:FindFirstChild("StationPrompt")
 	if prompt and prompt:IsA("ProximityPrompt") then
 		prompt.Triggered:Connect(function(player)
 			-- send the station name so client can show StationName in UI
