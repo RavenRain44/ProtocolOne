@@ -3,7 +3,7 @@
 
 -- UICookHandler (Script)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RecipeBook = ReplicatedStorage:WaitForChild("RecipeBook")
+local RecipeBook = ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook")
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")
 local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
