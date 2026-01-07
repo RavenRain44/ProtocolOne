@@ -3,7 +3,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local FoodGroupsFolder = ReplicatedStorage:WaitForChild("FoodGroups")
-local RecipeBook = ReplicatedStorage:WaitForChild("RecipeBook")
+local RecipeBook = ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook")
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")

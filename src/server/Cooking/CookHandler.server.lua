@@ -14,32 +14,44 @@ local RequestCook = Remotes:WaitForChild("RequestCook")
 local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")
 local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
 local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
+local FoodTools = ReplicatedStorage:WaitForChild("FoodTools")
 
-local RecipeBook = ReplicatedStorage:WaitForChild("RecipeBook")
+local RecipeBook = require(ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook"))
 local FoodGroups = ReplicatedStorage:WaitForChild("FoodGroups")
 local stationsFolder = workspace:WaitForChild("ProductionStations")
 
--- chooseFoodFromGroup simplified (uses rarity NumberValue)
-local function chooseFoodFromGroup(groupFolder, rarityMultiplierPerGroup)
-	local weighted = {}
-	-- rarityMultiplierPerGroup is table mapping rarity folder name -> multiplier
-	for _, rarityFolder in ipairs(groupFolder:GetChildren()) do
-		local rarityName = rarityFolder.Name
-		local mult = (rarityMultiplierPerGroup and rarityMultiplierPerGroup[rarityName]) or 1
-		for _, food in ipairs(rarityFolder:GetChildren()) do
-			local rv = food:FindFirstChild("Rarity")
-			if rv and type(rv.Value) == "number" then
-				local finalWeight = math.max(1, math.floor(rv.Value * mult))
-				for _ = 1, finalWeight do
-					table.insert(weighted, food)
-				end
-			end
-		end
+-- Calculate normalized Gaussian curve value
+function calcNormCurve(inputtedAmount, actualAmount: number, weight: number)
+	return weight * math.exp(1) ^ (-((inputtedAmount - actualAmount) ^ 2) / (2 * (1 ^ 2)))
+end
+
+type ChanceEntry = {
+	item: string,
+	chance: number,
+}
+
+-- Normalize chances table into array of ChanceEntry
+function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
+	local total = 0
+
+	-- Sum all chances
+	for _, chance in pairs(chancesTable) do
+		total += chance
 	end
-	if #weighted == 0 then
-		return nil
+
+	assert(total > 0, "Chance table total must be > 0")
+
+	-- Build ordered array
+	local normalized: { ChanceEntry } = {}
+
+	for item, chance in pairs(chancesTable) do
+		table.insert(normalized, {
+			item = item,
+			chance = chance / total,
+		})
 	end
-	return weighted[math.random(#weighted)]
+
+	return normalized
 end
 
 -- default cook modifiers (you already suggested)
@@ -49,131 +61,86 @@ local cookModifiers = {
 	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 },
 }
 
--- RequestCook: args: stationName (string)
-RequestCook.OnServerEvent:Connect(function(player, stationName)
-	if type(stationName) ~= "string" then
-		return
-	end
-	local machineRecipes = RecipeBook[stationName]
-	if not machineRecipes then
-		Remotes.InventoryUpdated:FireClient(player, {}, {}) -- keep client sync
+-- Handle cooking requests
+RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
+	local recipeHold = player:FindFirstChild("RecipeHold")
+	if not recipeHold then
 		return
 	end
 
-	local hold = player:FindFirstChild("RecipeHold")
-	if not hold then
-		return
+	print("Found recipe hold")
+
+	-- Gather ingredients
+	local inputtedIngredients = {}
+	for _, item in ipairs(recipeHold:GetChildren()) do
+		if item:IsA("Tool") then
+			local itemName = item.Name:gsub("_slot$", "")
+			inputtedIngredients[itemName] = (inputtedIngredients[itemName] or 0) + 1
+		end
 	end
 
-	-- Build list of names in hold
-	local inHold = {}
-	for _, tool in ipairs(hold:GetChildren()) do
-		if tool:IsA("Tool") then
-			table.insert(inHold, tool.Name)
+	print("Gathered inputted ingredients")
+
+	-- Create table of chances for every item in the RecipeBook
+	local chancesTable = {}
+	for recipeName, recipeData in pairs(RecipeBook) do
+		local recipeIngredients = recipeData.Recipe
+		local totalChance = 0
+
+		-- Calculate chance based on ingredients
+		for _, ingredient in ipairs(recipeIngredients) do
+			local inputtedAmount = inputtedIngredients[ingredient.Name] or 0
+			local ingredientChance = calcNormCurve(inputtedAmount, ingredient.Amount, ingredient.Weight)
+			totalChance = totalChance + ingredientChance
 		end
+
+		-- Void if totalChance is zero
+		if totalChance == 0 then
+			continue
+		end
+
+		chancesTable[recipeName] = totalChance
 	end
 
-	-- find a recipe that matches exactly (all ingredients present)
-	local chosenRecipe = nil
-	for _, recipe in ipairs(machineRecipes) do
-		local ok = true
-		-- duplicates allowed (player wanted duplicates ok)
-		local counts = {}
-		for _, name in ipairs(inHold) do
-			counts[name] = (counts[name] or 0) + 1
-		end
-		for _, need in ipairs(recipe.Ingredients) do
-			if not counts[need] or counts[need] <= 0 then
-				ok = false
-				break
-			end
-			counts[need] = counts[need] - 1
-		end
-		if ok then
-			chosenRecipe = recipe
+	print("Calculated chances table")
+
+	-- Normalize chances
+	assert(next(chancesTable) ~= nil, "No valid recipes matched input ingredients")
+
+	local normalizedChances = normalizeChances(chancesTable)
+
+	print("Normalized chances")
+
+	-- Select food based on normalized chances
+	local roll = math.random()
+	local cumulative = 0
+	local createdFood = nil
+
+	for _, entry in ipairs(normalizedChances) do
+		cumulative += entry.chance
+		if roll <= cumulative then
+			createdFood = entry.item
 			break
 		end
 	end
 
-	if not chosenRecipe then
-		-- no recipe — notify client so they can show message (we use InventoryUpdated to keep it simple)
-		InventoryUpdated:FireClient(player, nil, nil, "NO_RECIPE")
-		return
+	-- Floating-point safety fallback
+	if not createdFood and #normalizedChances > 0 then
+		createdFood = normalizedChances[#normalizedChances].item
 	end
 
-	-- consume the tools in hold (destroy them)
-	local needed = {}
-	for _, v in ipairs(chosenRecipe.Ingredients) do
-		needed[v] = (needed[v] or 0) + 1
-	end
-	for name, count in pairs(needed) do
-		for _ = 1, count do
-			local tool = hold:FindFirstChild(name)
-			if tool and tool:IsA("Tool") then
-				tool:Destroy()
-			end
+	print("Selected food: " .. tostring(createdFood))
+
+	-- Fire cooking result back to client
+	local toolToGive = FoodTools:FindFirstChild(createdFood)
+	if toolToGive then
+		-- Give the player the cooked food item
+		local backpack = player:FindFirstChild("Backpack")
+		if backpack then
+			local clonedTool = toolToGive:Clone()
+			clonedTool.Parent = backpack
 		end
 	end
 
-	-- start minigame
-	StartCookingEvent:FireClient(player)
-
-	-- wait for result from this player
-	local result
-	local conn
-	conn = CookingResultEvent.OnServerEvent:Connect(function(plr, r)
-		if plr == player then
-			result = r
-			conn:Disconnect()
-		end
-	end)
-
-	-- wait until result is set (with timeout)
-	local maxWait = 30
-	local timer = 0
-	while not result and timer < maxWait do
-		task.wait(0.1)
-		timer = timer + 0.1
-	end
-	if not result then
-		-- no result — abort (optionally give back ingredients)
-		InventoryUpdated:FireClient(player, nil, nil, "TIMEOUT")
-		return
-	end
-
-	-- compute rarity multipliers per rarity folder
-	local mod = cookModifiers[result] or cookModifiers.Yellow
-	-- choose food from this recipe's OutputGroup
-	local groupFolder = FoodGroups:FindFirstChild(chosenRecipe.OutputGroup)
-	if not groupFolder then
-		warn("Missing group for recipe:", chosenRecipe.OutputGroup)
-		return
-	end
-
-	local selectedFood = chooseFoodFromGroup(groupFolder, mod)
-	if not selectedFood then
-		warn("No food chosen after selection")
-		return
-	end
-
-	-- spawn the tool in world at the station spawn point (if exists)
-	local station = stationsFolder:FindFirstChild(stationName)
-	local spawnPoint = station and station:FindFirstChild("SpawnPoint")
-	local clone = selectedFood:Clone()
-	clone.Parent = workspace
-	if spawnPoint and clone:FindFirstChild("Handle") then
-		clone.Handle.CFrame = spawnPoint.CFrame
-	end
-
-	-- ensure its handle prompt is enabled so player can pick it up
-	local handle = clone:FindFirstChild("Handle")
-	if handle then
-		local prox = handle:FindFirstChildWhichIsA("ProximityPrompt", true)
-		if prox then
-			prox.Enabled = true
-		end
-	end
-
-	-- notify client to refresh inventory state (backpack changed)
-	InventoryUpdated:FireClient(player)
+	print("Gave cooked food to player")
 end)
