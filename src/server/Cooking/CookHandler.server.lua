@@ -25,6 +25,32 @@ function calcNormCurve(inputtedAmount, actualAmount: number, weight: number)
 	return weight * math.exp(1) ^ (-((inputtedAmount - actualAmount) ^ 2) / (2 * (1 ^ 2)))
 end
 
+-- helper to send current state to player
+local function sendInventoryState(player)
+	local backpack = player:FindFirstChild("Backpack")
+	local hold = player:FindFirstChild("RecipeHold")
+	local left = {}
+	local right = {}
+
+	if backpack then
+		for _, tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(left, tool.Name)
+			end
+		end
+	end
+
+	if hold then
+		for _, tool in ipairs(hold:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(right, tool.Name)
+			end
+		end
+	end
+
+	InventoryUpdated:FireClient(player, left, right)
+end
+
 type ChanceEntry = {
 	item: string,
 	chance: number,
@@ -49,6 +75,7 @@ function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
 			item = item,
 			chance = chance / total,
 		})
+		print("Normalized chance for " .. item .. ": " .. tostring(chance / total))
 	end
 
 	return normalized
@@ -76,6 +103,10 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 		if item:IsA("Tool") then
 			local itemName = item.Name:gsub("_slot$", "")
 			inputtedIngredients[itemName] = (inputtedIngredients[itemName] or 0) + 1
+
+			-- Remove ingredient from RecipeHold and UI
+			item:Destroy()
+			sendInventoryState(player)
 		end
 	end
 
@@ -89,6 +120,10 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 
 		-- Calculate chance based on ingredients
 		for _, ingredient in ipairs(recipeIngredients) do
+			if not inputtedIngredients[ingredient.Name] then
+				totalChance = 0
+				continue
+			end
 			local inputtedAmount = inputtedIngredients[ingredient.Name] or 0
 			local ingredientChance = calcNormCurve(inputtedAmount, ingredient.Amount, ingredient.Weight)
 			totalChance = totalChance + ingredientChance
@@ -98,6 +133,8 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 		if totalChance == 0 then
 			continue
 		end
+
+		print("Base chance for " .. recipeName .. ": " .. tostring(totalChance))
 
 		chancesTable[recipeName] = totalChance
 	end
