@@ -82,7 +82,7 @@ local function createSlot(parent, template, itemName, itemNumber)
 			local part = ingredient.Handle:Clone()
 			part.Parent = workspace.ProductionStations.UltimateStation.IngredientParts
 			part.Anchored = false
-			part.position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
+			part.Position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
 			part.CanCollide = true
 		elseif side == "TemplateRight" then
 			local part = workspace.ProductionStations.UltimateStation.IngredientParts:FindFirstChild(itemName)
@@ -103,7 +103,7 @@ InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 	for _, itemName in ipairs(leftTools or {}) do
 		inventoryMap[itemName] = (inventoryMap[itemName] or 0) + 1
 	end
-	for item, number in inventoryMap do
+	for item, number in pairs(inventoryMap) do
 		createSlot(invFrame, invTemplate, item, number)
 	end
 
@@ -112,7 +112,7 @@ InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 	for _, itemName in ipairs(rightTools or {}) do
 		recipeMap[itemName] = (recipeMap[itemName] or 0) + 1
 	end
-	for item, number in recipeMap do
+	for item, number in pairs(recipeMap) do
 		createSlot(ingredientsFrame, ingredientsTemplate, item, number)
 	end
 end)
