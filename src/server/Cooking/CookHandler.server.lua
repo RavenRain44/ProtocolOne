@@ -11,14 +11,12 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local RequestCook = Remotes:WaitForChild("RequestCook")
-local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")
-local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
+-- local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")
+-- local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
 local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
 local FoodTools = ReplicatedStorage:WaitForChild("FoodTools")
 
 local RecipeBook = require(ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook"))
-local FoodGroups = ReplicatedStorage:WaitForChild("FoodGroups")
-local stationsFolder = workspace:WaitForChild("ProductionStations")
 
 
 type ChanceEntry = {
@@ -55,7 +53,26 @@ function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
 	return normalized
 end
 
-function calculateNormalizedChances(inputtedIngredients: { [string]: number }, craftmanshipGrade: string): { ChanceEntry }
+function gatherIngredients(player): { [string]: number }
+	local recipeHold = player:FindFirstChild("RecipeHold")
+	local inputtedIngredients = {}
+
+	if not recipeHold then
+		return inputtedIngredients
+	end
+
+	for _, item in ipairs(recipeHold:GetChildren()) do
+		if item:IsA("Tool") then
+			local itemName = item.Name:gsub("_slot$", "")
+			inputtedIngredients[itemName] = (inputtedIngredients[itemName] or 0) + 1
+		end
+	end
+
+	return inputtedIngredients
+end
+
+-- Calculate normalized chances based on inputted ingredients
+function calculateNormalizedChances(inputtedIngredients: { [string]: number }) --, craftmanshipGrade: string): { ChanceEntry } FOR LATER USE
 	-- Create table of chances for every item in the RecipeBook
 	local chancesTable = {}
 	for recipeName, recipeData in pairs(RecipeBook) do
@@ -113,34 +130,13 @@ local function sendInventoryState(player)
 	InventoryUpdated:FireClient(player, left, right)
 end
 
--- default cook modifiers (you already suggested)
-local cookModifiers = {
-	Green = { Common = 0.7, Uncommon = 1.0, Rare = 1.2, Epic = 1.3, Legendary = 1.5 },
-	Yellow = { Common = 1.0, Uncommon = 1.0, Rare = 1.0, Epic = 1.0, Legendary = 1.0 },
-	Red = { Common = 1.5, Uncommon = 1.2, Rare = 0.6, Epic = 0.3, Legendary = 0.1 },
-}
-
 -- Handle cooking requests
-RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
-	local recipeHold = player:FindFirstChild("RecipeHold")
-	if not recipeHold then
-		return
-	end
-
+RequestCook.OnServerEvent:Connect(function(player) -- , craftmanshipGrade) FOR LATER USE
 	-- Gather ingredients
-	local inputtedIngredients = {}
-	for _, item in ipairs(recipeHold:GetChildren()) do
-		if item:IsA("Tool") then
-			local itemName = item.Name:gsub("_slot$", "")
-			inputtedIngredients[itemName] = (inputtedIngredients[itemName] or 0) + 1
+	local inputtedIngredients = gatherIngredients(player)
 
-			-- Remove ingredient from RecipeHold and UI
-			item:Destroy()
-			sendInventoryState(player)
-		end
-	end
-
-	normalizedChances = calculateNormalizedChances(inputtedIngredients, craftmanshipGrade)
+	-- Calculate normalized chances
+	local normalizedChances = calculateNormalizedChances(inputtedIngredients)
 
 	-- Select food based on normalized chances
 	local roll = math.random()
