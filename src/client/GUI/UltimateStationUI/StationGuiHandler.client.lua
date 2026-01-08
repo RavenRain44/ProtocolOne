@@ -76,10 +76,23 @@ local function createSlot(parent, template, itemName, itemNumber)
 	foodNameLabel.MouseButton1Click:Connect(function()
 		ToggleIngredient:FireServer(itemName, side)
 
+		local ingredientParts = workspace.ProductionStations.UltimateStation:FindFirstChild("IngredientParts")
+		local inventoryMap = {}
+		for _, n in ipairs(ingredientParts:GetChildren() or {}) do
+			inventoryMap[n.Name] = (inventoryMap[n.Name] or 0) + 1
+		end
+
+		if side == "TemplateLeft" and (inventoryMap[itemName] or 0) >= 6 then
+			-- Limit of 5 ingredients in the station
+			return
+		end
+
+
 		-- Part instantiation
 		if side == "TemplateLeft" then
 			local ingredient = ReplicatedStorage.FoodGroups.StartingIngredients:FindFirstChild(itemName)
 			local part = ingredient.Handle:Clone()
+			part.Name = itemName
 			part.Parent = workspace.ProductionStations.UltimateStation.IngredientParts
 			part.Anchored = false
 			part.Position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
@@ -170,6 +183,11 @@ exitBtn.MouseButton1Click:Connect(function()
 			local itemName = child.Name:gsub("_slot$", "")
 			ToggleIngredient:FireServer(itemName, "TemplateRight")
 		end
+	end
+
+	-- Delete all visible parts in the station
+	for _, part in ipairs(workspace.ProductionStations.UltimateStation.IngredientParts:GetChildren()) do
+		part:Destroy()
 	end
 	close()
 end)
