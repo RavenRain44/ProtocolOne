@@ -148,6 +148,11 @@ end)
 -- CLOSE UI
 ----------------------------------------------------------------
 function close()
+	-- Delete all visible parts in the station
+	for _, part in ipairs(workspace.ProductionStations.UltimateStation.IngredientParts:GetChildren()) do
+		part:Destroy()
+	end
+
 	-- Disable the UI
 	screen.Enabled = false
 	hotbarFrame.Visible = true
@@ -183,11 +188,6 @@ exitBtn.MouseButton1Click:Connect(function()
 			local itemName = child.Name:gsub("_slot$", "")
 			ToggleIngredient:FireServer(itemName, "TemplateRight")
 		end
-	end
-
-	-- Delete all visible parts in the station
-	for _, part in ipairs(workspace.ProductionStations.UltimateStation.IngredientParts:GetChildren()) do
-		part:Destroy()
 	end
 	close()
 end)

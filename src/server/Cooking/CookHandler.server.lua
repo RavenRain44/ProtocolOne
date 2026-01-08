@@ -20,9 +20,71 @@ local RecipeBook = require(ReplicatedStorage.Shared.Modules.Food:WaitForChild("R
 local FoodGroups = ReplicatedStorage:WaitForChild("FoodGroups")
 local stationsFolder = workspace:WaitForChild("ProductionStations")
 
+
+type ChanceEntry = {
+	item: string,
+	chance: number,
+}
+
 -- Calculate normalized Gaussian curve value
 function calcNormCurve(inputtedAmount, actualAmount: number, weight: number)
 	return weight * math.exp(1) ^ (-((inputtedAmount - actualAmount) ^ 2) / (2 * (1 ^ 2)))
+end
+
+-- Normalize chances table into array of ChanceEntry
+function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
+	local total = 0
+
+	-- Sum all chances
+	for _, chance in pairs(chancesTable) do
+		total += chance
+	end
+
+	assert(total > 0, "Chance table total must be > 0")
+
+	-- Build ordered array
+	local normalized: { ChanceEntry } = {}
+
+	for item, chance in pairs(chancesTable) do
+		table.insert(normalized, {
+			item = item,
+			chance = chance / total,
+		})
+	end
+
+	return normalized
+end
+
+function calculateNormalizedChances(inputtedIngredients: { [string]: number }, craftmanshipGrade: string): { ChanceEntry }
+	-- Create table of chances for every item in the RecipeBook
+	local chancesTable = {}
+	for recipeName, recipeData in pairs(RecipeBook) do
+		local recipeIngredients = recipeData.Recipe
+		local totalChance = 0
+
+		-- Calculate chance based on ingredients
+		for _, ingredient in ipairs(recipeIngredients) do
+			if not inputtedIngredients[ingredient.Name] then
+				totalChance = 0
+				continue
+			end
+			local inputtedAmount = inputtedIngredients[ingredient.Name] or 0
+			local ingredientChance = calcNormCurve(inputtedAmount, ingredient.Amount, ingredient.Weight)
+			totalChance = totalChance + ingredientChance
+		end
+
+		-- Void if totalChance is zero
+		if totalChance == 0 then
+			continue
+		end
+
+		chancesTable[recipeName] = totalChance
+	end
+
+	-- Normalize chances
+	assert(next(chancesTable) ~= nil, "No valid recipes matched input ingredients")
+
+	return normalizeChances(chancesTable)
 end
 
 -- helper to send current state to player
@@ -51,36 +113,6 @@ local function sendInventoryState(player)
 	InventoryUpdated:FireClient(player, left, right)
 end
 
-type ChanceEntry = {
-	item: string,
-	chance: number,
-}
-
--- Normalize chances table into array of ChanceEntry
-function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
-	local total = 0
-
-	-- Sum all chances
-	for _, chance in pairs(chancesTable) do
-		total += chance
-	end
-
-	assert(total > 0, "Chance table total must be > 0")
-
-	-- Build ordered array
-	local normalized: { ChanceEntry } = {}
-
-	for item, chance in pairs(chancesTable) do
-		table.insert(normalized, {
-			item = item,
-			chance = chance / total,
-		})
-		print("Normalized chance for " .. item .. ": " .. tostring(chance / total))
-	end
-
-	return normalized
-end
-
 -- default cook modifiers (you already suggested)
 local cookModifiers = {
 	Green = { Common = 0.7, Uncommon = 1.0, Rare = 1.2, Epic = 1.3, Legendary = 1.5 },
@@ -95,8 +127,6 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 		return
 	end
 
-	print("Found recipe hold")
-
 	-- Gather ingredients
 	local inputtedIngredients = {}
 	for _, item in ipairs(recipeHold:GetChildren()) do
@@ -110,43 +140,7 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 		end
 	end
 
-	print("Gathered inputted ingredients")
-
-	-- Create table of chances for every item in the RecipeBook
-	local chancesTable = {}
-	for recipeName, recipeData in pairs(RecipeBook) do
-		local recipeIngredients = recipeData.Recipe
-		local totalChance = 0
-
-		-- Calculate chance based on ingredients
-		for _, ingredient in ipairs(recipeIngredients) do
-			if not inputtedIngredients[ingredient.Name] then
-				totalChance = 0
-				continue
-			end
-			local inputtedAmount = inputtedIngredients[ingredient.Name] or 0
-			local ingredientChance = calcNormCurve(inputtedAmount, ingredient.Amount, ingredient.Weight)
-			totalChance = totalChance + ingredientChance
-		end
-
-		-- Void if totalChance is zero
-		if totalChance == 0 then
-			continue
-		end
-
-		print("Base chance for " .. recipeName .. ": " .. tostring(totalChance))
-
-		chancesTable[recipeName] = totalChance
-	end
-
-	print("Calculated chances table")
-
-	-- Normalize chances
-	assert(next(chancesTable) ~= nil, "No valid recipes matched input ingredients")
-
-	local normalizedChances = normalizeChances(chancesTable)
-
-	print("Normalized chances")
+	normalizedChances = calculateNormalizedChances(inputtedIngredients, craftmanshipGrade)
 
 	-- Select food based on normalized chances
 	local roll = math.random()
@@ -166,8 +160,6 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 		createdFood = normalizedChances[#normalizedChances].item
 	end
 
-	print("Selected food: " .. tostring(createdFood))
-
 	-- Fire cooking result back to client
 	local toolToGive = FoodTools:FindFirstChild(createdFood)
 	if toolToGive then
@@ -178,6 +170,4 @@ RequestCook.OnServerEvent:Connect(function(player, craftmanshipGrade)
 			clonedTool.Parent = backpack
 		end
 	end
-
-	print("Gave cooked food to player")
 end)
