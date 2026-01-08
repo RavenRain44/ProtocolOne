@@ -3,12 +3,10 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SellPointsFolder = workspace:WaitForChild("SellPoints")
-local ToolTracker = game.ServerScriptService:WaitForChild("ToolTracker")
+local ToolTracker = game.ServerScriptService.Server.Modules:WaitForChild("ToolTracker")
 
--- MODULE (do not rename anymore)
-local NPCSellRules = ReplicatedStorage:WaitForChild("NPCSellRules")
-
---print("DEBUG: NPCSellRules loaded:", NPCSellRules)
+-- MODULE
+local NPCSellRules = ReplicatedStorage.Shared.Modules.NPC:WaitForChild("NPCSellRules")
 
 -- Loop through ALL descendants looking for ProximityPrompts
 for _, descendant in ipairs(SellPointsFolder:GetDescendants()) do
