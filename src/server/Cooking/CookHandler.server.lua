@@ -15,6 +15,7 @@ local RequestCook = Remotes:WaitForChild("RequestCook")
 -- local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
 local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
 local FoodTools = ReplicatedStorage:WaitForChild("FoodTools")
+local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
 
 local RecipeBook = require(ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook"))
 
@@ -65,6 +66,7 @@ function gatherIngredients(player): { [string]: number }
 		if item:IsA("Tool") then
 			local itemName = item.Name:gsub("_slot$", "")
 			inputtedIngredients[itemName] = (inputtedIngredients[itemName] or 0) + 1
+			item:Destroy()
 		end
 	end
 
@@ -82,7 +84,6 @@ function calculateNormalizedChances(inputtedIngredients: { [string]: number }) -
 		-- Calculate chance based on ingredients
 		for _, ingredient in ipairs(recipeIngredients) do
 			if not inputtedIngredients[ingredient.Name] then
-				totalChance = 0
 				continue
 			end
 			local inputtedAmount = inputtedIngredients[ingredient.Name] or 0
@@ -104,32 +105,6 @@ function calculateNormalizedChances(inputtedIngredients: { [string]: number }) -
 	return normalizeChances(chancesTable)
 end
 
--- helper to send current state to player
-local function sendInventoryState(player)
-	local backpack = player:FindFirstChild("Backpack")
-	local hold = player:FindFirstChild("RecipeHold")
-	local left = {}
-	local right = {}
-
-	if backpack then
-		for _, tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") then
-				table.insert(left, tool.Name)
-			end
-		end
-	end
-
-	if hold then
-		for _, tool in ipairs(hold:GetChildren()) do
-			if tool:IsA("Tool") then
-				table.insert(right, tool.Name)
-			end
-		end
-	end
-
-	InventoryUpdated:FireClient(player, left, right)
-end
-
 -- Handle cooking requests
 RequestCook.OnServerEvent:Connect(function(player) -- , craftmanshipGrade) FOR LATER USE
 	-- Gather ingredients
@@ -141,9 +116,28 @@ RequestCook.OnServerEvent:Connect(function(player) -- , craftmanshipGrade) FOR L
 	-- Select food based on normalized chances
 	local roll = math.random()
 	local cumulative = 0
-	local createdFood = nil
+	local food = nil
 
 	for _, entry in ipairs(normalizedChances) do
+		cumulative += entry.chance
+		if roll <= cumulative then
+			food = entry.item
+			break
+		end
+	end
+
+	-- Floating-point safety fallback
+	if not food and #normalizedChances > 0 then
+		food = normalizedChances[#normalizedChances].item
+	end
+
+	-- Select rarity of food based on RecipeBook rarity table for the item
+	local rarityTable = normalizeChances(RecipeBook[food].Rarity)
+	roll = math.random()
+	cumulative = 0
+	local createdFood = nil
+
+	for _, entry in ipairs(rarityTable) do
 		cumulative += entry.chance
 		if roll <= cumulative then
 			createdFood = entry.item
@@ -152,12 +146,13 @@ RequestCook.OnServerEvent:Connect(function(player) -- , craftmanshipGrade) FOR L
 	end
 
 	-- Floating-point safety fallback
-	if not createdFood and #normalizedChances > 0 then
-		createdFood = normalizedChances[#normalizedChances].item
+	if not createdFood and #rarityTable > 0 then
+		createdFood = rarityTable[#rarityTable].item
 	end
 
 	-- Fire cooking result back to client
-	local toolToGive = FoodTools:FindFirstChild(createdFood)
+	local foodType = FoodTools:FindFirstChild(food)
+	local toolToGive = foodType:FindFirstChild(createdFood)
 	if toolToGive then
 		-- Give the player the cooked food item
 		local backpack = player:FindFirstChild("Backpack")

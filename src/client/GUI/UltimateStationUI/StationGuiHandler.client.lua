@@ -9,6 +9,7 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
 local ToggleIngredient = Remotes:WaitForChild("ToggleIngredient")
 local RequestCook = Remotes:WaitForChild("RequestCook")
+local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
 
 -- UI REFERENCES
 local screen = player.PlayerGui:WaitForChild("UltimateStationUI")
@@ -137,6 +138,8 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeringPlayer
 	if triggeringPlayer ~= player then
 		return
 	end
+
+	OpenStationUI:FireServer(player)
 
 	if prompt.Name == "StationPrompt" then
 		screen.Enabled = true
