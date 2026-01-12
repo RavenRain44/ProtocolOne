@@ -11,6 +11,9 @@ local ToggleIngredient = Remotes:WaitForChild("ToggleIngredient")
 local RequestCook = Remotes:WaitForChild("RequestCook")
 local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
 
+-- ASSETS
+local FoodBlueprints = ReplicatedStorage.FoodTools:WaitForChild("FoodBlueprints")
+
 -- UI REFERENCES
 local screen = player.PlayerGui:WaitForChild("UltimateStationUI")
 local background = screen:WaitForChild("Background")
@@ -91,7 +94,7 @@ local function createSlot(parent, template, itemName, itemNumber)
 
 		-- Part instantiation
 		if side == "TemplateLeft" then
-			local ingredient = ReplicatedStorage.FoodGroups.StartingIngredients:FindFirstChild(itemName)
+			local ingredient = FoodBlueprints:FindFirstChild(itemName)
 			local part = ingredient.Handle:Clone()
 			part.Name = itemName
 			part.Parent = workspace.ProductionStations.UltimateStation.IngredientParts
