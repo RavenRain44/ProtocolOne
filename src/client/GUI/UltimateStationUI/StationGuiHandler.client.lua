@@ -12,7 +12,7 @@ local RequestCook = Remotes:WaitForChild("RequestCook")
 local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
 
 -- ASSETS
-local FoodBlueprints = ReplicatedStorage.FoodTools:WaitForChild("FoodBlueprints")
+local FoodBlueprints = ReplicatedStorage.FoodGroups:WaitForChild("FoodBlueprints")
 
 -- UI REFERENCES
 local screen = player.PlayerGui:WaitForChild("UltimateStationUI")
