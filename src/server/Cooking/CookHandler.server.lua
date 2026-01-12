@@ -54,6 +54,22 @@ function normalizeChances(chancesTable: { [string]: number }): { ChanceEntry }
 	return normalized
 end
 
+-- Random pick helper
+function pickByChance(normalizedChances: { ChanceEntry }): string
+	local roll = math.random()
+	local cumulative = 0
+
+	for _, entry in ipairs(normalizedChances) do
+		cumulative += entry.chance
+		if roll <= cumulative then
+			return entry.item
+		end
+	end
+
+	-- Floating-point safety fallback
+	return normalizedChances[#normalizedChances].item
+end
+
 function gatherIngredients(player): { [string]: number }
 	local recipeHold = player:FindFirstChild("RecipeHold")
 	local inputtedIngredients = {}
@@ -113,42 +129,12 @@ RequestCook.OnServerEvent:Connect(function(player) -- , craftmanshipGrade) FOR L
 	-- Calculate normalized chances
 	local normalizedChances = calculateNormalizedChances(inputtedIngredients)
 
-	-- Select food based on normalized chances
-	local roll = math.random()
-	local cumulative = 0
-	local food = nil
-
-	for _, entry in ipairs(normalizedChances) do
-		cumulative += entry.chance
-		if roll <= cumulative then
-			food = entry.item
-			break
-		end
-	end
-
-	-- Floating-point safety fallback
-	if not food and #normalizedChances > 0 then
-		food = normalizedChances[#normalizedChances].item
-	end
+	local food = pickByChance(normalizedChances)
 
 	-- Select rarity of food based on RecipeBook rarity table for the item
 	local rarityTable = normalizeChances(RecipeBook[food].Rarity)
-	roll = math.random()
-	cumulative = 0
-	local createdFood = nil
 
-	for _, entry in ipairs(rarityTable) do
-		cumulative += entry.chance
-		if roll <= cumulative then
-			createdFood = entry.item
-			break
-		end
-	end
-
-	-- Floating-point safety fallback
-	if not createdFood and #rarityTable > 0 then
-		createdFood = rarityTable[#rarityTable].item
-	end
+	local createdFood = pickByChance(rarityTable)
 
 	-- Fire cooking result back to client
 	local foodType = FoodTools:FindFirstChild(food)
