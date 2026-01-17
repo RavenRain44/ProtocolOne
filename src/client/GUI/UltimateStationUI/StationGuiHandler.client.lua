@@ -91,10 +91,9 @@ local function createSlot(parent, template, itemName, itemNumber)
 			return
 		end
 
-
 		-- Part instantiation
 		if side == "TemplateLeft" then
-			local ingredient = FoodBlueprints:FindFirstChild(itemName)
+			local ingredient = FoodBlueprints:WaitForChild(itemName)
 			local part = ingredient.Handle:Clone()
 			part.Name = itemName
 			part.Parent = workspace.ProductionStations.UltimateStation.IngredientParts
@@ -102,7 +101,7 @@ local function createSlot(parent, template, itemName, itemNumber)
 			part.Position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
 			part.CanCollide = true
 		elseif side == "TemplateRight" then
-			local part = workspace.ProductionStations.UltimateStation.IngredientParts:FindFirstChild(itemName)
+			local part = workspace.ProductionStations.UltimateStation.IngredientParts:WaitForChild(itemName)
 			part:Destroy()
 		end
 	end)
