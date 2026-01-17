@@ -6,9 +6,10 @@ local tweenService = game:GetService("TweenService")
 local runService = game:GetService("RunService")
 local userInputService = game:GetService("UserInputService")
 local collectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TICK_SOUND = script.sounds.tick
-local END_TICK_SOUND = script.sounds.tick2
+local TICK_SOUND = ReplicatedStorage.sounds:WaitForChild("tick")
+local END_TICK_SOUND = ReplicatedStorage.sounds:WaitForChild("tick2")
 local DIALOG_RESPONSES_UI =
 	game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("dialog"):WaitForChild("dialogResponses")
 
@@ -74,7 +75,7 @@ function DialogModule.new(npcName, npc, prompt, animation)
 		end
 		self.npcGui.AlwaysOnTop = false
 	end)
-	self.connections = { heartbeatConnection } --,shownConnection,hiddenConnection}
+	self.connections = { heartbeatConnection,shownConnection,hiddenConnection}
 
 	return self
 end

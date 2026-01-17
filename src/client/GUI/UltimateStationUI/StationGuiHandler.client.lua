@@ -9,6 +9,10 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
 local ToggleIngredient = Remotes:WaitForChild("ToggleIngredient")
 local RequestCook = Remotes:WaitForChild("RequestCook")
+local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
+
+-- ASSETS
+local FoodBlueprints = ReplicatedStorage.FoodGroups:WaitForChild("FoodBlueprints")
 
 -- UI REFERENCES
 local screen = player.PlayerGui:WaitForChild("UltimateStationUI")
@@ -76,13 +80,26 @@ local function createSlot(parent, template, itemName, itemNumber)
 	foodNameLabel.MouseButton1Click:Connect(function()
 		ToggleIngredient:FireServer(itemName, side)
 
+		local ingredientParts = workspace.ProductionStations.UltimateStation:FindFirstChild("IngredientParts")
+		local inventoryMap = {}
+		for _, n in ipairs(ingredientParts:GetChildren() or {}) do
+			inventoryMap[n.Name] = (inventoryMap[n.Name] or 0) + 1
+		end
+
+		if side == "TemplateLeft" and (inventoryMap[itemName] or 0) >= 6 then
+			-- Limit of 5 ingredients in the station
+			return
+		end
+
+
 		-- Part instantiation
 		if side == "TemplateLeft" then
-			local ingredient = ReplicatedStorage.FoodGroups.StartingIngredients:FindFirstChild(itemName)
+			local ingredient = FoodBlueprints:FindFirstChild(itemName)
 			local part = ingredient.Handle:Clone()
+			part.Name = itemName
 			part.Parent = workspace.ProductionStations.UltimateStation.IngredientParts
 			part.Anchored = false
-			part.position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
+			part.Position = workspace.ProductionStations.UltimateStation.SpawnPoint.Position
 			part.CanCollide = true
 		elseif side == "TemplateRight" then
 			local part = workspace.ProductionStations.UltimateStation.IngredientParts:FindFirstChild(itemName)
@@ -103,7 +120,7 @@ InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 	for _, itemName in ipairs(leftTools or {}) do
 		inventoryMap[itemName] = (inventoryMap[itemName] or 0) + 1
 	end
-	for item, number in inventoryMap do
+	for item, number in pairs(inventoryMap) do
 		createSlot(invFrame, invTemplate, item, number)
 	end
 
@@ -112,7 +129,7 @@ InventoryUpdated.OnClientEvent:Connect(function(leftTools, rightTools)
 	for _, itemName in ipairs(rightTools or {}) do
 		recipeMap[itemName] = (recipeMap[itemName] or 0) + 1
 	end
-	for item, number in recipeMap do
+	for item, number in pairs(recipeMap) do
 		createSlot(ingredientsFrame, ingredientsTemplate, item, number)
 	end
 end)
@@ -125,6 +142,8 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeringPlayer
 		return
 	end
 
+	OpenStationUI:FireServer(player)
+
 	if prompt.Name == "StationPrompt" then
 		screen.Enabled = true
 		hotbarFrame.Visible = false
@@ -135,6 +154,11 @@ end)
 -- CLOSE UI
 ----------------------------------------------------------------
 function close()
+	-- Delete all visible parts in the station
+	for _, part in ipairs(workspace.ProductionStations.UltimateStation.IngredientParts:GetChildren()) do
+		part:Destroy()
+	end
+
 	-- Disable the UI
 	screen.Enabled = false
 	hotbarFrame.Visible = true

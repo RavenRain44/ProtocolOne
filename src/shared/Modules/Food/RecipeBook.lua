@@ -2,14 +2,15 @@
 
 local RecipeBook = {}
 
--- This is to define output types for recipes
--- TODO make all types and assign meaning to the numbers
+-- This is to define output types for recipes 
+-- FoodType = Multiplier/Rarity 
 local FoodType = {
-	Meat = 0,
 	Vegetable = 1,
-	Fruit = 2,
-	Candy = 3,
-	BakedGood = 4,
+	Fruit = 1.2,
+	BakedGood = 2,
+	Sweets = 4,
+	Meat = 8,
+	Seafood = 16,
 }
 
 -- Define the structure of ingredients in the recipe book
@@ -50,6 +51,9 @@ RecipeBook = {
 			newIngredient("Flour", 2, 0.7),
 			newIngredient("Egg", 1, 0.3),
 		},
+		Rarity = {
+			Dough = 1.0, -- Bland
+		}
 	},
 
 	Bread = {
@@ -57,6 +61,11 @@ RecipeBook = {
 		Recipe = {
 			newIngredient("Dough", 1, 1.0),
 		},
+		Rarity = {
+			White_Bread = 0.7, -- Bland
+			BrownBread = 0.29, -- Flavorful
+			Crescent = 0.01, -- Divine
+		}
 	},
 }
 

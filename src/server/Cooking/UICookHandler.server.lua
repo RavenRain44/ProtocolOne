@@ -5,9 +5,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RecipeBook = ReplicatedStorage.Shared.Modules.Food:WaitForChild("RecipeBook")
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
 local StartCookingEvent = Remotes:WaitForChild("StartCookingEvent")
 local CookingResultEvent = Remotes:WaitForChild("CookingResultEvent")
 local UICookRequest = Remotes:WaitForChild("UICookRequest")
+local OpenStationUI = Remotes:WaitForChild("OpenStationUI")
+local InventoryUpdated = Remotes:WaitForChild("InventoryUpdated")
+
 local FoodGroupsFolder = ReplicatedStorage:WaitForChild("FoodGroups")
 local stationsFolder = workspace:WaitForChild("ProductionStations")
 
@@ -124,6 +128,37 @@ local function chooseFoodFromGroup(groupFolder, rarityAdjustments)
 	end
 	return weighted[math.random(#weighted)]
 end
+
+-- helper to send current state to player
+local function sendInventoryState(player)
+	local backpack = player:FindFirstChild("Backpack")
+	local hold = player:FindFirstChild("RecipeHold")
+	local left = {}
+	local right = {}
+
+	if backpack then
+		for _, tool in ipairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(left, tool.Name)
+			end
+		end
+	end
+
+	if hold then
+		for _, tool in ipairs(hold:GetChildren()) do
+			if tool:IsA("Tool") then
+				table.insert(right, tool.Name)
+			end
+		end
+	end
+
+	InventoryUpdated:FireClient(player, left, right)
+end
+
+-- Handle UI open requests
+OpenStationUI.OnServerEvent:Connect(function(player)
+	sendInventoryState(player)
+end)
 
 -- Server handler for UICookRequest
 UICookRequest.OnServerEvent:Connect(function(player, stationName, selectedItems)
